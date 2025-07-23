@@ -46,7 +46,7 @@ Users can upload shoe details along with images, and view a catalog of available
 Start the server with:
 
 ```bash
-node app.js
+npx nodemon app.js
 ```
 
 The app will run on `http://localhost:3000` by default (adjust as needed).
