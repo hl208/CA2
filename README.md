@@ -28,7 +28,7 @@ Users can upload shoe details along with images, and view a catalog of available
    ```bash
    git clone <your-repo-url>
    cd ca2
-````
+   ```
 
 2. Install dependencies
 
