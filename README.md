@@ -1,6 +1,4 @@
-Sure! Here's a straightforward README.md template for your project based on your package.json and the context:
 
-````markdown
 # CA2 - Shoe Finder App
 
 ## Overview
