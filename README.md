@@ -74,7 +74,4 @@ update
 * [Multer](https://github.com/expressjs/multer)
 * [Connect-flash](https://github.com/jaredhanson/connect-flash)
 * [Express-session](https://github.com/expressjs/session)
----
 
-Would you like me to generate a sample `app.js` or instructions to set up your database connection next?
-```
