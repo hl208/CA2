@@ -26,7 +26,7 @@ Users can upload shoe details along with images, and view a catalog of available
 
 1. Clone the repo  
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/hl208/CA2.git
    cd ca2
    ```
 
