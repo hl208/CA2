@@ -42,12 +42,12 @@
                   Brand: <strong><%= shoe.brand %></strong><br>
                   Size: <%= shoe.size %><br>
                   Price: $<%= shoe.price %>
+                  <% if (shoe.image_path) { %>
+                  <img src="<%= shoe.image_path %>" class="card-img-bottom" width="40px" height="400px" alt="Shoe Image">
+                  <% } %>
                 </p>
                 <a href="/shoes/viewSneaker/<%= shoe.id %>" class="btn btn-primary">View Details</a>
               </div>
-            <% if (shoe.image_path) { %>
-              <img src="<%= shoe.image_path %>" class="card-img-bottom" width="40px" height="400px" alt="Shoe Image">
-            <% } %>
             </div>
           </div>
         <% }); %>
