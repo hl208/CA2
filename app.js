@@ -45,40 +45,15 @@ app.set('view engine', 'ejs');
 console.log('App starting...');
 const shoesRouter = require('./routes/shoes.js')(db);
 console.log('Shoes router loaded');
-
-
 const userRouter = require('./routes/user.js')(db);
 
 // Use routers with prefixes
 app.use('/shoes', shoesRouter);
 app.use('/user', userRouter);
 
-// Redirect root to shoe listing page
 app.get('/', (req, res) => {
     res.redirect('/shoes');
 });
-
-app.get('/viewSneaker/:id', (req, res) => {
-    const id = req.params.id;
-    const sql = 'SELECT * FROM shoes WHERE id = ?';
-
-    db.query(sql, [id], (error, results) => {
-        if (error) {
-            console.error('Error fetching shoes:', error);
-            return res.status(500).send('Error fetching shoes');
-        }
-
-        if (results.length > 0) {
-            res.render('viewSneaker', { shoe: results[0]})
-        } else {
-            res.status(404).send('Shoes not found');
-        }
-
-
-    })
-
-
-})
 
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
