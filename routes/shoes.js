@@ -20,20 +20,33 @@ module.exports = function(db) {
   
   const upload = multer({ storage: storage });
 
+  router.get('/addSneakers', (req, res) => {
+      res.render('addSneakers');
+    });
+
+
     // POST form with image upload
-  router.post('/addShoe', upload.single('image'), (req, res) => {
-    const { user_id, brand, model, size, condition, description, price } = req.body;
+  router.post('/addSneakers', upload.single('image'), (req, res) => {
+    const { brand, model, description, size, condition, price } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const sql = `INSERT INTO shoes (user_id, brand, model, size, \`condition\`, description, price, image_path)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO shoes (brand, model, description, size, \`condition\`, price, image_path)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    db.query(sql, [user_id, brand, model, size, condition, description, price, image_path], (err) => {
-      if (err) throw err;
-      res.redirect('/');
+    console.log('Form data:', req.body);
+    console.log('Uploaded file:', req.file);
+
+    db.query(sql, [brand, model, description, size, condition, price, image_path], (err, result) => {
+      if (err) {
+        console.error('Database error in POST /addSneakers:', err);
+        return res.status(500).send(`Database error: ${err.code} - ${err.sqlMessage}`);
+      }
+      res.redirect('/shoes');
     });
   });
 
+
+  
   router.get('/', (req, res) => {
     db.query('SELECT * FROM shoes', (err, results) => {
       if (err) throw err;
