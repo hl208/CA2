@@ -30,13 +30,22 @@ db.getConnection((err, connection) => {
 
 // Middleware to parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
+
 app.use(session({
     secret: 'secret',
     resave: false,
     saveUninitialized: true, 
     cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 } // expires in 7 days
 }));
+
 app.use(flash());
+
+// Add this middleware to make session data available to EJS templates
+app.use((req, res, next) => {
+    res.locals.session = req.session;
+    next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
@@ -52,6 +61,13 @@ app.use('/user', userRouter);
 
 app.get('/', (req, res) => {
     res.redirect('/shoes');
+});
+
+app.get('/dashboard', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/user/login');
+  }
+  res.render('dashboard', { user: req.session.user });
 });
 
 app.listen(3000, () => {
