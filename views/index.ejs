@@ -37,7 +37,7 @@
           <div class="col">
             <div class="card h-100 shadow-sm">
               <div class="card-body">
-                <h5 class="card-title"><%= shoe.name %></h5>
+                <h5 class="card-title"><%= shoe.model %></h5>
                 <p class="card-text">
                   Brand: <strong><%= shoe.brand %></strong><br>
                   Size: <%= shoe.size %><br>
@@ -45,9 +45,9 @@
                 </p>
                 <a href="/shoes/viewSneaker/<%= shoe.id %>" class="btn btn-primary">View Details</a>
               </div>
-              <% if (shoe.image_url) { %>
-                <img src="<%= shoe.image_path %>" class="card-img-bottom" alt="Shoe Image">
-              <% } %>
+            <% if (shoe.image_path) { %>
+              <img src="<%= shoe.image_path %>" class="card-img-bottom" width="40px" height="400px" alt="Shoe Image">
+            <% } %>
             </div>
           </div>
         <% }); %>

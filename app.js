@@ -30,15 +30,14 @@ db.getConnection((err, connection) => {
 
 // Middleware to parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
-app.use(flash());
 app.use(session({
     secret: 'secret',
     resave: false,
     saveUninitialized: true, 
     cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 } // expires in 7 days
 }));
-
+app.use(flash());
+app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
 // Import routes, passing db pool
