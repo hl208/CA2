@@ -18,12 +18,11 @@ CREATE TABLE shoes (
     `user_id` INT(11) NOT NULL,
     `brand` VARCHAR(100) NOT NULL,
     `model` VARCHAR(100) NOT NULL,
-    `description` TEXT,
     `size` VARCHAR(10) NOT NULL,
     `condition` VARCHAR(50) NOT NULL,
+    `description` TEXT,
     `price` DECIMAL(10,2) NOT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `stock` INT(200) NOT NULL,
+    `location` VARCHAR(255) NOT NULL,
 
     `image_path` VARCHAR(255),
     FOREIGN KEY (`user_id`) REFERENCES users(`id`) ON DELETE CASCADE

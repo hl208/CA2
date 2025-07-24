@@ -42,7 +42,11 @@ app.use(session({
 app.set('view engine', 'ejs');
 
 // Import routes, passing db pool
+console.log('App starting...');
 const shoesRouter = require('./routes/shoes.js')(db);
+console.log('Shoes router loaded');
+
+
 const userRouter = require('./routes/user.js')(db);
 
 // Use routers with prefixes
