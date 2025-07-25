@@ -60,7 +60,7 @@ app.use('/shoes', shoesRouter);
 app.use('/user', userRouter);
 
 app.get('/', (req, res) => {
-    res.redirect('/shoes');
+    res.redirect('/user/login'); // Redirect to login page
 });
 
 app.get('/dashboard', (req, res) => {
