@@ -19,6 +19,35 @@ module.exports = function (db) {
       res.render('index', { shoes: results });
     });
   });
+  //search functionality
+router.get('/search', (req, res) => {
+  const { query = '', filter = 'All' } = req.query;
+  let sql = 'SELECT * FROM shoes WHERE 1=1';
+  const params = [];
+
+  if (query.trim()) {
+    sql += ' AND (brand LIKE ? OR model LIKE ? OR description LIKE ?)';
+    const like = `%${query}%`;
+    params.push(like, like, like);
+  }
+
+  if (filter !== 'All') {
+    sql += ' AND brand = ?';
+    params.push(filter);
+  }
+
+  sql += ' ORDER BY created_at DESC';
+
+  // Run both queries in parallel for better speed
+  db.query(sql, params, (err, shoes) => {
+    if (err) return res.status(500).send('Database error');
+    db.query('SELECT DISTINCT brand FROM shoes', (err2, brands) => {
+      if (err2) return res.status(500).send('Database error');
+      res.render('index', { shoes, brands, selectedBrand: filter, searchTerm: query });
+    });
+  });
+});
+
 
   // Add sneaker form
   router.get('/addSneakers', (req, res) => res.render('addSneakers'));
