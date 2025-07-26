@@ -63,11 +63,8 @@ app.get('/', (req, res) => {
     res.redirect('/user/login'); // Redirect to login page
 });
 
-app.get('/dashboard', (req, res) => {
-  if (!req.session.user) {
-    return res.redirect('/user/login');
-  }
-  res.render('dashboard', { user: req.session.user });
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/user/login'));
 });
 
 app.listen(3000, () => {
