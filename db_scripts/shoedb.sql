@@ -22,7 +22,7 @@ CREATE TABLE shoes (
     `condition` VARCHAR(50) NOT NULL,
     `description` TEXT,
     `price` DECIMAL(10,2) NOT NULL,
-    `location` VARCHAR(255) NOT NULL,
+    `created_at` VARCHAR(255) NOT NULL,
 
     `image_path` VARCHAR(255),
     FOREIGN KEY (`user_id`) REFERENCES users(`id`) ON DELETE CASCADE

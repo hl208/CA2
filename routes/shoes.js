@@ -39,16 +39,16 @@ module.exports = function(db) {
     if (!req.body) return res.status(400).send('No form data received');
     console.log('POST /addSneakers reached');
 
-    const { brand, model, description, size, condition, price, location } = req.body;
+    const { brand, model, description, size, condition, price, created_at } = req.body;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const sql = `INSERT INTO shoes (brand, model, description, size, \`condition\`, price, location, image_path)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO shoes (brand, model, description, size, \`condition\`, price, created_at, image_path)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)`;
 
     console.log('Form data:', req.body);
     console.log('Uploaded file:', req.file);
 
-    db.query(sql, [brand, model, description, size, condition, price, location, image_path], (err, result) => {
+    db.query(sql, [brand, model, description, size, condition, price, created_at, image_path], (err, result) => {
       if (err) {
         console.error('Database error in POST /addSneakers:', err);
         return res.status(500).send(`Database error: ${err.code} - ${err.sqlMessage}`);
