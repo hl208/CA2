@@ -10,12 +10,17 @@
 
   <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
     <div class="container-fluid">
-      <a class="navbar-brand" href="/">We Are Sneakers</a>
-      <a class="nav-link text-white" href="/shoes/addSneakers">Add new Sneaker</a>
-      <div class="collapse navbar-collapse">
-        <ul class="navbar-nav ms-auto">
+      <div class="d-flex align-items-center">
+        <a class="navbar-brand me-3" href="/">We Are Sneakers</a>
+        <a class="btn btn-outline-light btn-sm" href="/shoes/addSneakers">Add new Sneaker</a>
+      </div>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+        <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="/user/logout">Logout</a>
+            <a class="btn btn-outline-light btn-sm mt-1" href="/user/logout">Logout</a>
           </li>
         </ul>
       </div>
