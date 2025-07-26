@@ -64,10 +64,29 @@ module.exports = function(db) {
   router.get('/dashboard', requireLogin, (req, res) => res.render('dashboard', { user: req.session.user }));
 
   //Admin panel
-  router.get('/admin', requireLogin, (req, res) => {
-    if (req.session.user.role !== 'admin') return res.status(403).send('Access denied');
-    res.render('admin', { user: req.session.user });
+  router.get('/admin', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.status(403).send('Access denied');
+  }
+
+  const brandSQL = 'SELECT brand, COUNT(*) AS total FROM shoes GROUP BY brand';
+  const dailySQL = 'SELECT DATE(created_at) AS date, COUNT(*) AS total FROM shoes GROUP BY DATE(created_at)';
+
+  db.query(brandSQL, (err, brandResults) => {
+    if (err) return res.status(500).send('Error loading chart data');
+
+    db.query(dailySQL, (err2, dailyResults) => {
+      if (err2) return res.status(500).send('Error loading chart data');
+
+      res.render('admin', {
+        user: req.session.user,
+        brandData: brandResults,
+        dailyData: dailyResults
+      });
+    });
   });
+});
+
 
   //Helpers
   function errorHandler(res, msg, redirect) {
