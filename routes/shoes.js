@@ -53,7 +53,7 @@ module.exports = function (db) {
 
     sql += ' ORDER BY created_at DESC';
 
-    console.log("Final SQL:", sql, params); // ✅ Debug log
+    console.log("Final SQL:", sql, params); // 
 
     db.query(sql, params, (err, shoes) => {
       if (err) return res.status(500).send('Database error');

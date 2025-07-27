@@ -67,6 +67,10 @@ app.get('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/user/login'));
 });
 
+app.use((req, res) => {
+    res.status(404).render('404', { title: 'Page Not Found' });
+});
+
 app.listen(3000, () => {
     console.log('Server is running on http://localhost:3000');
 });
