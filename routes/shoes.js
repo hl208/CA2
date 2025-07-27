@@ -18,6 +18,14 @@ module.exports = function (db) {
     next();
   }
 
+    // Middleware to check if user is admin
+  function isAdmin(req, res, next) {
+    if (!req.session.user || req.session.user.role !== 'admin') {
+      return res.status(403).send('Access denied. Admin only.');
+    }
+    next();
+  }
+
   // Shoe listing
   router.get('/', isAuthenticated, (req, res) => {
     const userId = req.session.user.id;
@@ -111,39 +119,73 @@ module.exports = function (db) {
   });
 });
 
-router.post('/editSneaker/:id', isAuthenticated, upload.single('image_path'), (req, res) => {
-  const userId = req.session.user.id;
-  const sneakerId = req.params.id;
-  const { brand, model, description, size, condition, price } = req.body;
+  router.post('/editSneaker/:id', isAuthenticated, upload.single('image_path'), (req, res) => {
+    const { id } = req.params;
+    const { brand, model, description, size, condition, price } = req.body;
+    const user = req.session.user;
 
-  // First, check ownership
-  const checkSql = 'SELECT * FROM shoes WHERE id = ? AND user_id = ?';
-  db.query(checkSql, [sneakerId, userId], (err, results) => {
-    if (err) return res.status(500).send('Database error');
-    if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
+    // Check ownership OR admin
+    const checkSql = user.role === 'admin'
+      ? 'SELECT * FROM shoes WHERE id = ?'
+      : 'SELECT * FROM shoes WHERE id = ? AND user_id = ?';
+    const checkParams = user.role === 'admin' ? [id] : [id, user.id];
 
-    // Prepare update query
-    let sql = `
-      UPDATE shoes SET brand = ?, model = ?, description = ?, size = ?, \`condition\` = ?, price = ?
-    `;
-    const params = [brand, model, description, size, condition, price];
+    db.query(checkSql, checkParams, (err, results) => {
+      if (err) return res.status(500).send('Database error');
+      if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
 
-    if (req.file) {
-      sql += ', image_path = ?';
-      params.push(`/uploads/${req.file.filename}`);
+      // Prepare update query
+      let sql = `
+        UPDATE shoes SET brand=?, model=?, description=?, size=?, \`condition\`=?, price=?`;
+      const params = [brand, model, description, size, condition, price];
+
+      if (req.file) {
+        sql += ', image_path=?';
+        params.push(`/uploads/${req.file.filename}`);
+      }
+
+      sql += ' WHERE id=?';
+      params.push(id);
+
+      if (user.role !== 'admin') {
+        sql += ' AND user_id=?';
+        params.push(user.id);
+      }
+
+      db.query(sql, params, (err2) => {
+        if (err2) return res.status(500).send('Error updating sneaker');
+        req.flash('success', 'Sneaker updated successfully!');
+        res.redirect('/shoes');
+      });
+    });
+  });
+
+
+  //Delete sneaker (Admin OR Owner can delete)
+  router.post('/deleteSneaker/:id', isAuthenticated, (req, res) => {
+    const sneakerId = req.params.id;
+    const user = req.session.user;
+
+    // If admin -> can delete any sneaker
+    // If normal user -> can delete only their own
+    let sql, params;
+    if (user.role === 'admin') {
+      sql = 'DELETE FROM shoes WHERE id = ?';
+      params = [sneakerId];
+    } else {
+      sql = 'DELETE FROM shoes WHERE id = ? AND user_id = ?';
+      params = [sneakerId, user.id];
     }
 
-    sql += ' WHERE id = ? AND user_id = ?';
-    params.push(sneakerId, userId);
-
-    db.query(sql, params, (err2) => {
-      if (err2) return res.status(500).send('Database error during update');
-      req.flash('success', 'Sneaker updated successfully!');
+    db.query(sql, params, (err, result) => {
+      if (err) return res.status(500).send('Database error during delete');
+      if (result.affectedRows === 0) {
+        return res.status(403).send('Unauthorized to delete this sneaker');
+      }
+      req.flash('success', 'Sneaker deleted successfully!');
       res.redirect('/shoes');
     });
   });
-});
-
 
   return router;
 };
