@@ -38,46 +38,31 @@
 
   <div class="container py-5">
     <h1 class="mb-4 text-center">Shoe Listings</h1>
-    <div class="text-center mb-4">
-      <form action="/shoes/search" method="GET" class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-        <input type="text" name="query" class="form-control w-auto" placeholder="Search for sneakers..." />
-        <select id="filter" name="filter" class="form-select w-auto" required>
-          <option value="All" selected>All Brands</option>
-          <% shoes.forEach(item => { %>
-            <option value="<%= item.brand %>"><%= item.brand %></option>
-          <% }) %>
-        </select>
-        <button type="submit" class="btn w-auto btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
-        </button>
-      </form>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+  <% shoes.forEach(shoe => { %>
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title"><%= shoe.model %></h5>
+          <p class="card-text">
+            Brand: <strong><%= shoe.brand %></strong><br>
+            Size: <%= shoe.size %><br>
+            Price: $<%= shoe.price %>
+            <% if (shoe.image_path) { %>
+              <img src="<%= shoe.image_path %>" class="card-img-bottom" width="40px" height="400px" alt="Shoe Image" />
+            <% } %>
+          </p>
+          <a href="/shoes/viewSneaker/<%= shoe.id %>" class="btn btn-primary">View Details</a>
+
+          <% if (session && session.user && session.user.id === shoe.user_id) { %>
+            <a href="/shoes/editSneaker/<%= shoe.id %>" class="btn btn-warning ms-2">Edit</a>
+          <% } %>
+
+        </div>
+      </div>
     </div>
-    <% if (shoes.length === 0) { %>
-      <div class="alert alert-info text-center">
-        No shoes found.
-      </div>
-    <% } else { %>
-      <div class="row row-cols-1 row-cols-md-3 g-4">
-        <% shoes.forEach(shoe => { %>
-          <div class="col">
-            <div class="card h-100 shadow-sm">
-              <div class="card-body">
-                <h5 class="card-title"><%= shoe.model %></h5>
-                <p class="card-text">
-                  Brand: <strong><%= shoe.brand %></strong><br>
-                  Size: <%= shoe.size %><br>
-                  Price: $<%= shoe.price %>
-                  <% if (shoe.image_path) { %>
-                    <img src="<%= shoe.image_path %>" class="card-img-bottom" width="40px" height="400px" alt="Shoe Image" />
-                  <% } %>
-                </p>
-                <a href="/shoes/viewSneaker/<%= shoe.id %>" class="btn btn-primary">View Details</a>
-              </div>
-            </div>
-          </div>
-        <% }); %>
-      </div>
-    <% } %>
-  </div>
+  <% }); %>
+</div>
+
 </body>
 </html>

@@ -12,19 +12,33 @@ module.exports = function (db) {
   });
   const upload = multer({ storage });
 
+  // middleware to check if user is authenticated
+  function isAuthenticated(req, res, next) {
+    if (!req.session.user) return res.redirect('/user/login');
+    next();
+  }
+
   // Shoe listing
-  router.get('/', (req, res) => {
-    db.query('SELECT * FROM shoes', (err, results) => {
+  router.get('/', isAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
+    const sql = `
+      SELECT shoes.*, users.username 
+      FROM shoes 
+      JOIN users ON shoes.user_id = users.id
+    `;    
+    db.query(sql, [userId], (err, results) => {
       if (err) return res.status(500).send('Database error');
       res.render('index', { shoes: results });
     });
   });
   
   //search functionality
-  router.get('/search', (req, res) => {
+  router.get('/search', isAuthenticated, (req, res) => {
     const { query = '', filter = 'All' } = req.query;
-    let sql = 'SELECT * FROM shoes WHERE 1=1';
-    const params = [];
+    const userId = req.session.user.id;
+
+    let sql = 'SELECT * FROM shoes WHERE user_id = ?';
+    const params = [userId];
 
     if (query.trim()) {
       sql += ' AND (brand LIKE ? OR model LIKE ? OR description LIKE ?)';
@@ -32,19 +46,23 @@ module.exports = function (db) {
       params.push(like, like, like);
     }
 
-    if (filter !== 'All') {
+    if (filter && filter !== 'All') {
       sql += ' AND brand = ?';
       params.push(filter);
     }
-    // Run both queries in parallel for better speed
+
+    sql += ' ORDER BY created_at DESC';
+
+    console.log("Final SQL:", sql, params); // ✅ Debug log
+
     db.query(sql, params, (err, shoes) => {
       if (err) return res.status(500).send('Database error');
-      db.query('SELECT DISTINCT brand FROM shoes', (err2, brands) => {
+      db.query('SELECT DISTINCT brand FROM shoes WHERE user_id = ?', [userId], (err2, brands) => {
         if (err2) return res.status(500).send('Database error');
         res.render('index', { shoes, brands, selectedBrand: filter, searchTerm: query });
       });
     });
-  });
+});
 
 
   // Add sneaker form
@@ -53,14 +71,15 @@ module.exports = function (db) {
   // Handle Add Sneaker
   router.post('/addSneakers', upload.single('image_path'), (req, res) => {
     const { brand, model, description, size, condition, price } = req.body;
+    const userId = req.session.user.id; 
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const sql = `
-      INSERT INTO shoes (brand, model, description, size, \`condition\`, price, created_at, image_path)
-      VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
+     const sql = `
+      INSERT INTO shoes (user_id, brand, model, description, size, \`condition\`, price, created_at, image_path)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
     `;
 
-    db.query(sql, [brand, model, description, size, condition, price, image_path], (err) => {
+    db.query(sql, [userId, brand, model, description, size, condition, price, image_path], (err) => {
       if (err) {
         console.error(err);
         return res.status(500).send('Database error');
@@ -78,6 +97,53 @@ module.exports = function (db) {
       res.render('viewSneaker', { shoe: results[0] });
     });
   });
+
+  // Only allow authenticated users to edit or delete sneakers
+  router.get('/editSneaker/:id', isAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
+  const sneakerId = req.params.id;
+
+  const sql = 'SELECT * FROM shoes WHERE id = ? AND user_id = ?';
+  db.query(sql, [sneakerId, userId], (err, results) => {
+    if (err) return res.status(500).send('Database error');
+    if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
+    res.render('editSneaker', { shoe: results[0] });
+  });
+});
+
+router.post('/editSneaker/:id', isAuthenticated, upload.single('image_path'), (req, res) => {
+  const userId = req.session.user.id;
+  const sneakerId = req.params.id;
+  const { brand, model, description, size, condition, price } = req.body;
+
+  // First, check ownership
+  const checkSql = 'SELECT * FROM shoes WHERE id = ? AND user_id = ?';
+  db.query(checkSql, [sneakerId, userId], (err, results) => {
+    if (err) return res.status(500).send('Database error');
+    if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
+
+    // Prepare update query
+    let sql = `
+      UPDATE shoes SET brand = ?, model = ?, description = ?, size = ?, \`condition\` = ?, price = ?
+    `;
+    const params = [brand, model, description, size, condition, price];
+
+    if (req.file) {
+      sql += ', image_path = ?';
+      params.push(`/uploads/${req.file.filename}`);
+    }
+
+    sql += ' WHERE id = ? AND user_id = ?';
+    params.push(sneakerId, userId);
+
+    db.query(sql, params, (err2) => {
+      if (err2) return res.status(500).send('Database error during update');
+      req.flash('success', 'Sneaker updated successfully!');
+      res.redirect('/shoes');
+    });
+  });
+});
+
 
   return router;
 };
