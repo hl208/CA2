@@ -79,5 +79,53 @@ module.exports = function (db) {
     });
   });
 
+  // Add to cart
+  router.post('/add-to-cart/:id', (req, res) => {
+    const shoeId = req.params.id;
+
+    // Initialize cart if not present
+    if (!req.session.cart) {
+      req.session.cart = [];
+    }
+
+    // Check if the shoe is already in the cart
+    const existing = req.session.cart.find(item => item.id === shoeId);
+    if (existing) {
+      existing.qty += 1; // Increment quantity
+    } else {
+      req.session.cart.push({ id: shoeId, qty: 1 });
+    }
+
+    req.flash('success', 'Item added to cart!');
+    res.redirect('/shoes');
+  });
+
+  router.get('/cart', (req, res) => {
+    const cart = req.session.cart || [];
+
+    if (cart.length === 0) {
+      return res.render('cart', { items: [], total: 0 });
+    }
+
+    // Fetch product details from DB
+    const ids = cart.map(item => item.id);
+    const placeholders = ids.map(() => '?').join(',');
+
+    db.query(`SELECT * FROM shoes WHERE id IN (${placeholders})`, ids, (err, results) => {
+      if (err) return res.status(500).send('Database error');
+
+      // Combine cart quantities with item info
+      const items = results.map(shoe => {
+        const qty = cart.find(i => i.id === String(shoe.id)).qty;
+        return { ...shoe, qty, subtotal: qty * shoe.price };
+      });
+
+      const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+      res.render('cart', { items, total });
+    });
+  });
+
   return router;
 };
+

@@ -28,6 +28,9 @@
             </li>
           <% } else { %>
             <li class="nav-item">
+              <a class="btn btn-outline-light btn-sm mt-1 me-2" href="/shoes/cart">Cart</a>
+            </li>
+            <li class="nav-item">
               <a class="btn btn-outline-light btn-sm mt-1" href="/logout">Logout</a>
             </li>
           <% } %>
@@ -52,6 +55,7 @@
         </button>
       </form>
     </div>
+
     <% if (shoes.length === 0) { %>
       <div class="alert alert-info text-center">
         No shoes found.
@@ -72,6 +76,11 @@
                   <% } %>
                 </p>
                 <a href="/shoes/viewSneaker/<%= shoe.id %>" class="btn btn-primary">View Details</a>
+
+                <!-- Add to Cart form/button -->
+                <form action="/shoes/add-to-cart/<%= shoe.id %>" method="POST" class="d-inline ms-2">
+                  <button type="submit" class="btn btn-primary btn-sm">Add to Cart</button>
+                </form>
               </div>
             </div>
           </div>
