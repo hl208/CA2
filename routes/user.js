@@ -60,8 +60,47 @@ module.exports = function(db) {
     });
   });
 
-  //Dashboard
-  router.get('/dashboard', requireLogin, (req, res) => res.render('dashboard', { user: req.session.user }));
+  //User Dashboard
+router.get('/userdashboard', (req, res) => {
+  if (!req.session.user) {
+    return res.redirect('/user/login');
+  }
+
+  const userId = req.session.user.id;
+
+  const brandSQL = 'SELECT brand, COUNT(*) AS total FROM shoes WHERE user_id = ? GROUP BY brand';
+  const dailySQL = 'SELECT DATE(created_at) AS date, COUNT(*) AS total FROM shoes WHERE user_id = ? GROUP BY DATE(created_at)';
+  const uploadHistorySQL = `
+    SELECT id, model, brand, price, \`condition\`, image_path, created_at 
+    FROM shoes 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC
+  `;
+
+  db.query(brandSQL, [userId], (err, brandResults) => {
+    if (err) return res.status(500).send('Error loading brand chart data');
+
+    db.query(dailySQL, [userId], (err2, dailyResults) => {
+      if (err2) return res.status(500).send('Error loading daily chart data');
+
+    db.query(uploadHistorySQL, [userId], (err3, uploadResults) => {
+      if (err3) {
+        console.error('Upload History Query Error:', err3);
+        return res.status(500).send('Error loading upload history: ' + err3.message);
+      }
+
+        // ✅ Always render, even if uploadResults is empty
+        res.render('userdashboard', {
+          user: req.session.user,
+          brandData: brandResults,
+          dailyData: dailyResults,
+          uploadHistory: uploadResults // Can be []
+        });
+      });
+    });
+  });
+});
+
 
   //Admin panel
   router.get('/admin', (req, res) => {
@@ -87,17 +126,16 @@ module.exports = function(db) {
   });
 });
 
-
-  //Helpers
-  function errorHandler(res, msg, redirect) {
-    console.error(msg);
-    req.flash('error', msg);
-    res.redirect(redirect);
-  }
-  function flashRedirect(res, type, msg, path) {
-    req.flash(type, msg);
-    res.redirect(path);
-  }
+//Helpers
+function errorHandler(res, msg, redirect) {
+  console.error(msg);
+  req.flash('error', msg);
+  res.redirect(redirect);
+}
+function flashRedirect(res, type, msg, path) {
+  req.flash(type, msg);
+  res.redirect(path);
+}
 
   return router;
 };
