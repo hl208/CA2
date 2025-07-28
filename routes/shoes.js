@@ -126,6 +126,20 @@ module.exports = function (db) {
     });
   });
 
+    router.post('/cart/delete/:id', (req, res) => {
+    const itemId = req.params.id;
+
+    // Assuming cart is stored in session as an array of items with unique 'id'
+    if (!req.session.cart) {
+      // No cart, just redirect back
+      return res.redirect('/shoes/cart');
+    }
+
+    req.session.cart = req.session.cart.filter(item => item.id !== itemId);
+
+    res.redirect('/shoes/cart');
+  });
+
   return router;
 };
 
