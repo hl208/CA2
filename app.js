@@ -3,19 +3,18 @@ const mysql = require('mysql2');
 const session = require('express-session');
 const flash = require('connect-flash'); // Importing connect-flash for flash message
 const path = require('path');
-
 const app = express();
 
-// Use a connection pool instead of single connection
+require('dotenv').config();
 const db = mysql.createPool({
-    host: 'c237-all.mysql.database.azure.com',
-    user: 'c237admin',
-    password: 'c2372025!',
-    database: 'c237_24017721_shoedb',
-    port: 3306,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 // Optional: test pool connection
@@ -46,7 +45,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
 // Import routes, passing db pool
