@@ -27,51 +27,92 @@ module.exports = function (db) {
   }
 
   // Shoe listing
-  router.get('/', isAuthenticated, (req, res) => {
-    const userId = req.session.user.id;
-    const sql = `
-      SELECT shoes.*, users.username 
-      FROM shoes 
-      JOIN users ON shoes.user_id = users.id
-    `;    
-    db.query(sql, [userId], (err, results) => {
-      if (err) return res.status(500).send('Database error');
-      res.render('index', { shoes: results });
-    });
-  });
-  
-  //search functionality
-  router.get('/search', isAuthenticated, (req, res) => {
-    const { query = '', filter = 'All' } = req.query;
-    const userId = req.session.user.id;
+ router.get('/', isAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
 
-    let sql = 'SELECT * FROM shoes WHERE user_id = ?';
-    const params = [userId];
+  const sql = `
+    SELECT shoes.*, users.username 
+    FROM shoes
+    JOIN users ON shoes.user_id = users.id
+    WHERE shoes.user_id != ?
+    ORDER BY shoes.created_at DESC
+  `;
 
-    if (query.trim()) {
-      sql += ' AND (brand LIKE ? OR model LIKE ? OR description LIKE ?)';
-      const like = `%${query}%`;
-      params.push(like, like, like);
-    }
+  db.query(sql, [userId], (err, shoes) => {
+    if (err) return res.status(500).send('Database error');
 
-    if (filter && filter !== 'All') {
-      sql += ' AND brand = ?';
-      params.push(filter);
-    }
+    // ✅ Get all brands and sizes for filter dropdowns
+    db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
+      if (err2) return res.status(500).send('Database error');
 
-    sql += ' ORDER BY created_at DESC';
+      db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
+        if (err3) return res.status(500).send('Database error');
 
-    console.log("Final SQL:", sql, params); // 
-
-    db.query(sql, params, (err, shoes) => {
-      if (err) return res.status(500).send('Database error');
-      db.query('SELECT DISTINCT brand FROM shoes WHERE user_id = ?', [userId], (err2, brands) => {
-        if (err2) return res.status(500).send('Database error');
-        res.render('index', { shoes, brands, selectedBrand: filter, searchTerm: query });
+        res.render('index', { 
+          shoes, 
+          brands: brandResults,
+          sizes: sizeResults.map(row => row.size),
+          searchTerm: '',
+          selectedBrand: 'All',
+          selectedCondition: 'All',
+          selectedSize: 'All'
+        });
       });
     });
+  });
 });
 
+  
+  //search functionality
+router.get('/search', (req, res) => {
+  const { query, brand, condition, size } = req.query;
+
+  let sql = `
+    SELECT shoes.*, users.username FROM shoes
+    JOIN users ON shoes.user_id = users.id
+    WHERE 1=1
+  `;
+  const params = [];
+
+  if (query && query.trim() !== '') {
+    sql += ` AND (shoes.brand LIKE ? OR shoes.model LIKE ? OR shoes.description LIKE ?)`;
+    params.push(`%${query}%`, `%${query}%`, `%${query}%`);
+  }
+  if (brand && brand !== 'All') {
+    sql += ` AND shoes.brand = ?`;
+    params.push(brand);
+  }
+  if (condition && condition !== 'All') {
+    sql += ` AND shoes.condition = ?`;
+    params.push(condition);
+  }
+  if (size && size !== 'All') {
+    sql += ` AND shoes.size = ?`;
+    params.push(size);
+  }
+
+  db.query(sql, params, (err, shoes) => {
+    if (err) throw err;
+
+    db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
+      if (err2) throw err2;
+
+      db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
+        if (err3) throw err3;
+
+        res.render('index', {
+          shoes,
+          searchTerm: query || '',
+          selectedBrand: brand || 'All',
+          selectedCondition: condition || 'All',
+          selectedSize: size || 'All',
+          brands: brandResults,
+          sizes: sizeResults.map(row => row.size)
+        });
+      });
+    });
+  });
+});
 
   // Add sneaker form
   router.get('/addSneakers', (req, res) => res.render('addSneakers'));
@@ -147,7 +188,7 @@ module.exports = function (db) {
       sql += ' WHERE id=?';
       params.push(id);
 
-      if (user.role !== 'admin') {
+      if (user.role !== 'adm  in') {
         sql += ' AND user_id=?';
         params.push(user.id);
       }
