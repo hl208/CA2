@@ -40,27 +40,29 @@
     </div>
   </nav>
     
-    <div class="container">
+    <div class="container my-5">
         <br>
-        <div class="text-center"><h2>Sneakers info</h2></div>
+        <div class="text-center mb-4"><h2 class="fw-bold text-uppercase text-primary">Sneakers info</h2></div>
         <br>
         <% if (shoe) { %> 
-            <div>
-                <p><b>Sneakers Brand:</b><br> <%= shoe.brand %></p>
-                <p><b>Sneaker Model:</b><br>  <%= shoe.model %> ></p>
-                <p><b>Description:</b><br> <%= shoe.description %></p>
-                <p><b>Size:</b><br> <%= shoe.size %></p>
-                <p><b>Condition:</b><br> <%= shoe.condition %></p>
-                <p><b>Price:</b><br> <%= shoe.price %></p>
-                <p><b>Created at:</b>:</b><br> <%= shoe.created_at %></p>
-                <p><b>Sneaker Image:</b><br> <img src = "<%= shoe.image_path %>" width="20%"></p>
+            <div class="p-4 bg-light rounded-4 shadow-sm fs-5 border border-3 border-dark">
+                <p class="pb-3 mb-3 border-bottom"><b>Sneakers Brand:</b><br> <%= shoe.brand %></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Sneaker Model:</b><br>  <%= shoe.model %> ></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Description:</b><br> <%= shoe.description %></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Size:</b><br> <%= shoe.size %></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Condition:</b><br> <%= shoe.condition %></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Price:</b><br> <%= shoe.price %></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Created at:</b>:</b><br> <%= shoe.created_at %></p>
+                <p class="pb-3 mb-3 border-bottom"><b>Sneaker Image:</b><br> <img src = "<%= shoe.image_path %>" class="img-fluid rounded mt-2 border " width="20%"></p>
                                 
 
             </div>
         <% } else { %>
-            <p>No shoes found.</p>
+            <div class="alert alert-warning">No shoes found.</div>
         <% } %>
-        <a href ="/shoes/">Back</a>
+        <div class="mt-4">
+        <a href ="/shoes/" class="btn btn-dark btn-lg px-4">Back</a>
+        </div>
     </div>
     
 </body>
