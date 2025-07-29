@@ -188,7 +188,7 @@ router.get('/search', (req, res) => {
       sql += ' WHERE id=?';
       params.push(id);
 
-      if (user.role !== 'adm  in') {
+      if (user.role !== 'admin') {
         sql += ' AND user_id=?';
         params.push(user.id);
       }
