@@ -35,8 +35,13 @@
               <% } %>
             <% } %>
           </li>
+          <li class="nav-item me-3">
+            <a href="/shoes/cart" class="btn btn-outline-light btn-sm">
+              <i class="bi bi-cart"></i> Cart
+            </a>
+          </li>
           <li class="nav-item">
-            <a class="btn btn-outline-light btn-sm mt-1" href="/logout">
+            <a class="btn btn-outline-light btn-sm" href="/logout">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
           </li>
@@ -110,6 +115,11 @@
                 <% } %>
               </p>
               <a href="/shoes/viewSneaker/<%= shoe.id %>" class="btn btn-primary">View Details</a>
+              <form action="/shoes/cart/add/<%= shoe.id %>" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-success ms-2">
+                  <i class="bi bi-cart-plus"></i> Add to Cart
+                </button>
+              </form>
 
               <% if (session && session.user && session.user.id === shoe.user_id) { %>
                 <a href="/shoes/editSneaker/<%= shoe.id %>" class="btn btn-warning ms-2">Edit</a>

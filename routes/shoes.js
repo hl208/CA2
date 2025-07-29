@@ -228,5 +228,60 @@ router.get('/search', (req, res) => {
     });
   });
 
+  /*Cart Part*/
+  // Add to cart
+  router.post('/cart/add/:id', isAuthenticated, (req, res) => {
+    const shoeId = parseInt(req.params.id);
+
+    // Fetch shoe details from DB
+    db.query('SELECT * FROM shoes WHERE id = ?', [shoeId], (err, results) => {
+      if (err || results.length === 0) return res.status(500).send('Shoe not found');
+      const shoe = results[0];
+
+      if (!req.session.cart) req.session.cart = [];
+      // Check if already in cart
+      const existingItem = req.session.cart.find(i => i.id === shoeId);
+      if (existingItem) {
+        existingItem.qty += 1;
+        existingItem.subtotal = existingItem.qty * existingItem.price;
+      } else {
+        req.session.cart.push({
+          id: shoe.id,
+          model: shoe.model,
+          brand: shoe.brand,
+          price: parseFloat(shoe.price),
+          qty: 1,
+          subtotal: parseFloat(shoe.price)
+        });
+      }
+      res.redirect('/shoes');
+    });
+  });
+
+  router.get('/cart', isAuthenticated, (req, res) => {
+    // Ensure cart exists
+    if (!req.session.cart) {
+      req.session.cart = [];
+    }
+
+    const items = req.session.cart;
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+    res.render('cart', {
+      items: req.session.cart || [],
+      total: (req.session.cart || []).reduce((sum, item) => sum + item.subtotal, 0),
+    });
+  });
+
+
+  router.post('/cart/delete/:id', isAuthenticated, (req, res) => {
+    const shoeId = parseInt(req.params.id);
+    if (req.session.cart) {
+      req.session.cart = req.session.cart.filter(item => item.id !== shoeId);
+    }
+    res.redirect('/shoes/cart');
+  });
+
+
   return router;
 };
