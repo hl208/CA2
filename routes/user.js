@@ -60,7 +60,7 @@ module.exports = function(db) {
     });
   });
 
-  //Enhanced User Dashboard with My Shoes functionality
+  //Enhanced User Dashboard with upload historyfunctionality
   router.get('/userdashboard', requireLogin, (req, res) => {
     const userId = req.session.user.id;
 
@@ -73,30 +73,6 @@ module.exports = function(db) {
       ORDER BY created_at DESC
       LIMIT 10
     `;
-
-    // Get user's favorites
-    const favouriteIds = req.session.favourites || [];
-    let favouritesQuery = '';
-    let favouritesParams = [];
-    
-    if (favouriteIds.length > 0) {
-      const placeholders = favouriteIds.map(() => '?').join(',');
-      favouritesQuery = `
-        SELECT shoes.*, users.username
-        FROM shoes
-        JOIN users ON shoes.user_id = users.id
-        WHERE shoes.id IN (${placeholders})
-        LIMIT 5
-      `;
-      favouritesParams = favouriteIds;
-    }
-
-    // Get cart items count and total value
-    const cartItems = req.session.cart || [];
-    const cartItemsCount = cartItems.length;
-    const cartTotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-
-    // Get total shoes count for user
     const totalShoesSQL = 'SELECT COUNT(*) AS total FROM shoes WHERE user_id = ?';
 
     db.query(brandSQL, [userId], (err, brandResults) => {
@@ -114,47 +90,21 @@ module.exports = function(db) {
           db.query(totalShoesSQL, [userId], (err4, totalResults) => {
             if (err4) return res.status(500).send('Error loading total shoes count');
 
-            if (favouriteIds.length === 0) {
-              // No favorites, render with empty array
-              return res.render('userdashboard', {
-                user: req.session.user,
-                brandData: brandResults,
-                dailyData: dailyResults,
-                uploadHistory: uploadResults,
-                favouriteShoes: [],
-                cartItemsCount,
-                cartTotal,
-                totalShoes: totalResults[0].total,
-                successMessages: req.flash('success') || [],
-                errorMessages: req.flash('error') || []
-              });
-            }
-
-            // Get favorites
-            db.query(favouritesQuery, favouritesParams, (err5, favouriteResults) => {
-              if (err5) {
-                console.error('Dashboard favourites error:', err5);
-                return res.status(500).send('Error loading favourites');
-              }
-
-              res.render('userdashboard', {
-                user: req.session.user,
-                brandData: brandResults,
-                dailyData: dailyResults,
-                uploadHistory: uploadResults,
-                favouriteShoes: favouriteResults,
-                cartItemsCount,
-                cartTotal,
-                totalShoes: totalResults[0].total,
-                successMessages: req.flash('success') || [],
-                errorMessages: req.flash('error') || []
-              });
+            res.render('userdashboard', {
+              user: req.session.user,
+              brandData: brandResults,
+              dailyData: dailyResults,
+              uploadHistory: uploadResults,
+              totalShoes: totalResults[0].total,
+              successMessages: req.flash('success') || [],
+              errorMessages: req.flash('error') || []
             });
           });
         });
       });
     });
   });
+
 
   // Logout route
   router.get('/logout', (req, res) => {
