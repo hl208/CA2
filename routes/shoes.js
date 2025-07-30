@@ -159,24 +159,35 @@ router.get('/search', (req, res) => {
 
   // Handle Add Sneaker
   router.post('/addSneakers', upload.single('image_path'), (req, res) => {
-    const { brand, model, description, size, condition, price } = req.body;
-    const userId = req.session.user.id; 
-    const image_path = req.file ? `/uploads/${req.file.filename}` : null;
+  const { brand, model, description, size, condition, price } = req.body;
+  const userId = req.session.user.id;
+  const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-     const sql = `
-      INSERT INTO shoes (user_id, brand, model, description, size, \`condition\`, price, created_at, image_path)
-      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
-    `;
+  if (
+    !brand || brand.length < 2 ||
+    !model || model.length < 2 ||
+    !description || description.length < 10 ||
+    isNaN(size) || size < 1 || size > 20 ||
+    !condition ||
+    isNaN(price) || price < 0
+  ) {
+    return res.status(400).send('Invalid input. Please fill all fields correctly.');
+  }
 
-    db.query(sql, [userId, brand, model, description, size, condition, price, image_path], (err) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send('Database error');
-      }
-      req.flash('success', 'Sneaker added successfully!');
-      res.redirect('/shoes');
-    });
+  const sql = `
+    INSERT INTO shoes (user_id, brand, model, description, size, condition, price, created_at, image_path)
+    VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+  `;
+
+  db.query(sql, [userId, brand, model, description, size, condition, price, image_path], (err) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Database error');
+    }
+    req.flash('success', 'Sneaker added successfully!');
+    res.redirect('/shoes');
   });
+});
 
   // View single sneaker
   router.get('/viewSneaker/:id', (req, res) => {
