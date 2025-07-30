@@ -156,33 +156,6 @@ module.exports = function(db) {
     });
   });
 
-  // My Shoes - dedicated page for user's shoes with full management
-  router.get('/my-shoes', requireLogin, (req, res) => {
-    const userId = req.session.user.id;
-
-    const sql = `
-      SELECT shoes.*, users.username 
-      FROM shoes
-      JOIN users ON shoes.user_id = users.id
-      WHERE shoes.user_id = ?
-      ORDER BY shoes.created_at DESC
-    `;
-
-    db.query(sql, [userId], (err, shoes) => {
-      if (err) {
-        console.error('My shoes error:', err);
-        return res.status(500).send('Database error');
-      }
-
-      res.render('my-shoes', {
-        shoes,
-        user: req.session.user,
-        successMessages: req.flash('success') || [],
-        errorMessages: req.flash('error') || []
-      });
-    });
-  });
-
   // Logout route
   router.get('/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -228,7 +201,6 @@ module.exports = function(db) {
     });
   });
 });
-
 
   // Helper functions
   function errorHandler(req, res, msg, redirect) {
