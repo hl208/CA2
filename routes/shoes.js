@@ -27,40 +27,41 @@ module.exports = function (db) {
   }
 
   // Shoe listing
- router.get('/', isAuthenticated, (req, res) => {
-  const userId = req.session.user.id;
+  router.get('/', isAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
 
-  const sql = `
-    SELECT shoes.*, users.username 
-    FROM shoes
-    JOIN users ON shoes.user_id = users.id
-    WHERE shoes.user_id != ?
-    ORDER BY shoes.created_at DESC
-  `;
+    const sql = `
+      SELECT shoes.*, users.username 
+      FROM shoes
+      JOIN users ON shoes.user_id = users.id
+      WHERE shoes.user_id != ?
+      ORDER BY shoes.created_at DESC
+    `;
 
-  db.query(sql, [userId], (err, shoes) => {
-    if (err) return res.status(500).send('Database error');
+    db.query(sql, [userId], (err, shoes) => {
+      if (err) return res.status(500).send('Database error');
 
-    // ✅ Get all brands and sizes for filter dropdowns
-    db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
-      if (err2) return res.status(500).send('Database error');
+      db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
+        if (err2) return res.status(500).send('Database error');
 
-      db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
-        if (err3) return res.status(500).send('Database error');
+        db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
+          if (err3) return res.status(500).send('Database error');
 
-        res.render('index', { 
-          shoes, 
-          brands: brandResults,
-          sizes: sizeResults.map(row => row.size),
-          searchTerm: '',
-          selectedBrand: 'All',
-          selectedCondition: 'All',
-          selectedSize: 'All'
+          res.render('index', {
+            shoes,
+            brands: brandResults,
+            sizes: sizeResults.map(row => row.size),
+            searchTerm: '',
+            selectedBrand: 'All',
+            selectedCondition: 'All',
+            selectedSize: 'All',
+            successMessages: req.flash('success'),
+            errorMessages: req.flash('error')
+          });
         });
       });
     });
   });
-});
 
 // ChatGPT prompt (Hydhir): create a get and post route for favourites in shoes.js
 // ChatGPT prompt (Hydhir): is there a way where i dont have to create the favourites table in the database
@@ -155,30 +156,32 @@ router.get('/search', (req, res) => {
 });
 
   // Add sneaker form
-  router.get('/addSneakers', (req, res) => res.render('addSneakers'));
+  router.get('/addSneakers', (req, res) => {
+    res.render('addSneakers', { 
+      errorMessages: req.flash('error'), 
+      successMessages: req.flash('success')
+    });
+  });
 
   // Handle Add Sneaker
   router.post('/addSneakers', upload.single('image_path'), (req, res) => {
     const { brand, model, description, size, condition, price } = req.body;
-    const userId = req.session.user.id; 
+    const userId = req.session.user.id;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Server-side validation
+    // Validation
     if (!brand || !model || !description || !size || !condition || !price) {
-      return res.status(400).send('All fields except image are required.');
+      req.flash('error', 'All fields except image are required.');
+      return res.redirect('/shoes/addSneakers');
     }
-
-    if (condition.trim() === '') {
-      return res.status(400).send('Condition must be selected.');
-    }
-
     if (isNaN(size) || size < 1 || size > 20) {
-      return res.status(400).send('Size must be between 1 and 20.');
+      req.flash('error', 'Size must be between 1 and 20.');
+      return res.redirect('/shoes/addSneakers');
     }
-
     if (isNaN(price) || price <= 0) {
-      return res.status(400).send('Price must be a positive number.');
-    } 
+      req.flash('error', 'Price must be a positive number.');
+      return res.redirect('/shoes/addSneakers');
+    }
 
     const sql = `
       INSERT INTO shoes (user_id, brand, model, description, size, \`condition\`, price, created_at, image_path)
@@ -188,12 +191,15 @@ router.get('/search', (req, res) => {
     db.query(sql, [userId, brand, model, description, size, condition, price, image_path], (err) => {
       if (err) {
         console.error(err);
-        return res.status(500).send('Database error');
+        req.flash('error', 'Database error while adding sneaker.');
+        return res.redirect('/shoes/addSneakers');
       }
+
       req.flash('success', 'Sneaker added successfully!');
-      res.redirect('/shoes');
+      res.redirect('/shoes'); // ✅ Redirect to main listing (fresh DB query)
     });
   });
+
 
   // View single sneaker
   router.get('/viewSneaker/:id', (req, res) => {

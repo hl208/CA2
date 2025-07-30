@@ -51,7 +51,21 @@
 <div class="container my-4">
   <h2 class="text-center mb-4">Add New Sneaker</h2>
   <!--ChatGPT prompt: convert this code into a more refined and clean version. It used bootstrap forms to make it look nicer-->
-  
+  <!-- Flash Messages -->
+  <% if (errorMessages && errorMessages.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= errorMessages[0] %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <% if (successMessages && successMessages.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <%= successMessages[0] %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
   <!-- Form -->
   <form action="/shoes/addSneakers" method="POST" enctype="multipart/form-data" class="mx-auto" style="max-width: 500px">
     <!-- Brand -->
