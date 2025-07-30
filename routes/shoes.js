@@ -170,9 +170,8 @@ router.get('/search', (req, res) => {
       !brand || brand.length < 2 ||
       !model || model.length < 2 ||
       !description || description.length < 10 ||
-      isNaN(size) || size < 1 || size > 20 ||
+      isNaN(sizeNum) || sizeNum < 1 || sizeNum > 20 ||
       !condition ||
-      isNaN(price) || price < 0 ||
       isNaN(priceNum) || priceNum < 0 ||
       !created_at || isNaN(Date.parse(created_at))
     ) {
