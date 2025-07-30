@@ -166,6 +166,9 @@ router.get('/search', (req, res) => {
     const sizeNum = Number(size);
     const priceNum = Number(price);
 
+    console.log({ brand, model, description, size, condition, price, created_at });
+    console.log({ sizeNum, priceNum, createdAtParsed: Date.parse(created_at) });
+
     if (
       !brand || brand.length < 2 ||
       !model || model.length < 2 ||
