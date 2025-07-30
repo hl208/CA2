@@ -218,6 +218,12 @@
     form.submit();
   });
 
+    // Confirm submit
+  confirmSubmitBtn.addEventListener('click', () => {
+    form.submit();
+  });
+
+  //form validation
   form.addEventListener('submit', function (e) {
     const brand = document.getElementById('brand').value.trim();
     const model = document.getElementById('model').value.trim();
@@ -268,7 +274,7 @@
 
     if (image) {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      const maxSize = 2 * 1024 * 1024; // 2MB
+      const maxSize = 2 * 1024 * 1024;
 
       if (!allowedTypes.includes(image.type)) {
         errorMsg += 'Image must be a JPG, PNG, GIF, or WEBP file.\n';
@@ -282,10 +288,11 @@
     }
 
     if (!isValid) {
-      e.preventDefault(); // stop submission
+      e.preventDefault();
       alert(errorMsg);
     }
   });
+</script>
 </script>
 </script>
 </body>
