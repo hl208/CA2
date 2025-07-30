@@ -69,7 +69,7 @@
     <!-- Categories -->
     <div class="mb-3">
       <label for="categoriesInput" class="form-label">Categories / Tags:</label>
-      <input type="text" id="categoriesInput" class="form-control" required placeholder="Type a category and press Enter" />
+      <input type="text" id="categoriesInput" class="form-control" placeholder="Type a category and press Enter" />
       <div id="tagsContainer" class="mt-2"></div>
       <input type="hidden" name="categories" id="categories" />
     </div>
@@ -77,7 +77,7 @@
     <!-- Description -->
     <div class="mb-3">
       <label for="description" class="form-label">Description:</label>
-      <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe the sneaker..." required></textarea>
+      <textarea class="form-control" id="description" name="description" rows="3" required placeholder="Describe the sneaker..."></textarea>
     </div>
 
     <!-- Size -->
@@ -107,7 +107,7 @@
     <!-- Created At -->
     <div class="mb-3">
       <label for="created_at" class="form-label">Created At:</label>
-      <input type="date" class="form-control" id="created_at" name="created_at"  required/>
+      <input type="date" class="form-control" id="created_at" name="created_at" required />
     </div>
 
     <!-- Image Upload -->
@@ -217,14 +217,6 @@
     confirmModal.hide();
     form.submit();
   });
-
-    // Confirm submit
-  confirmSubmitBtn.addEventListener('click', () => {
-    form.submit();
-  });
-
-</script>
-</script>
 </script>
 </body>
 </html>

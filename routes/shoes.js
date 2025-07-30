@@ -159,34 +159,16 @@ router.get('/search', (req, res) => {
 
   // Handle Add Sneaker
   router.post('/addSneakers', upload.single('image_path'), (req, res) => {
-    const { brand, model, description, size, condition, price, created_at } = req.body;
-    const userId = req.session.user.id;
+    const { brand, model, description, size, condition, price } = req.body;
+    const userId = req.session.user.id; 
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const sizeNum = Number(size);
-    const priceNum = Number(price);
-
-    console.log({ brand, model, description, size, condition, price, created_at });
-    console.log({ sizeNum, priceNum, createdAtParsed: Date.parse(created_at) });
-
-    if (
-      !brand || brand.length < 2 ||
-      !model || model.length < 2 ||
-      !description || description.length < 10 ||
-      isNaN(sizeNum) || sizeNum < 1 || sizeNum > 20 ||
-      !condition ||
-      isNaN(priceNum) || priceNum < 0 ||
-      !created_at || isNaN(Date.parse(created_at))
-    ) {
-      return res.status(400).send('Invalid input. Please fill all fields correctly.');
-    }
-
-    const sql = `
-      INSERT INTO shoes (user_id, brand, model, description, size, condition, price, created_at, image_path)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+     const sql = `
+      INSERT INTO shoes (user_id, brand, model, description, size, \`condition\`, price, created_at, image_path)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
     `;
 
-    db.query(sql, [userId, brand, model, description, sizeNum, condition, priceNum, created_at, image_path], (err) => {
+    db.query(sql, [userId, brand, model, description, size, condition, price, image_path], (err) => {
       if (err) {
         console.error(err);
         return res.status(500).send('Database error');
