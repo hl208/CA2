@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="bg-light">
   <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
     <div class="container-fluid">
       <div class="d-flex align-items-center">
@@ -56,44 +56,61 @@
     <% } %>
   </div>
   
-<div class="container">
-  <h2 class="mb-4">Sneaker Statistics</h2>
-  <div class="row"> 
-  <canvas id="brandChart" width="400" height="200"></canvas>
-  <canvas id="dailyChart" width="400" height="200" class="mt-5"></canvas>
-</div>
+  <div class="container">
+    <h2 class="mb-4">Sneaker Statistics</h2>
+    <div class="row"> 
+      <canvas id="brandChart" width="400" height="200"></canvas>
+      <canvas id="dailyChart" width="400" height="200" class="mt-5"></canvas>
+    </div>
 
-<script>
-  const brandLabels = <%- JSON.stringify(brandData.map(b => b.brand)) %>;
-  const brandCounts = <%- JSON.stringify(brandData.map(b => b.total)) %>;
+    <script>
+      const brandLabels = <%- JSON.stringify(brandData.map(b => b.brand)) %>;
+      const brandCounts = <%- JSON.stringify(brandData.map(b => b.total)) %>;
 
-  const dailyLabels = <%- JSON.stringify(dailyData.map(d => d.date)) %>;
-  const dailyCounts = <%- JSON.stringify(dailyData.map(d => d.total)) %>;
+      const dailyLabels = <%- JSON.stringify(dailyData.map(d => d.date)) %>;
+      const dailyCounts = <%- JSON.stringify(dailyData.map(d => d.total)) %>;
 
-  new Chart(document.getElementById('brandChart'), {
-    type: 'bar',
-    data: {
-      labels: brandLabels,
-      datasets: [{
-        label: 'Sneakers per Brand',
-        data: brandCounts,
-        backgroundColor: 'rgba(54, 162, 235, 0.6)'
-      }]
-    }
-  });
+      new Chart(document.getElementById('brandChart'), {
+        type: 'bar',
+        data: {
+          labels: brandLabels,
+          datasets: [{
+            label: 'Sneakers per Brand',
+            data: brandCounts,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+          }]
+        }
+      });
 
-  new Chart(document.getElementById('dailyChart'), {
-    type: 'line',
-    data: {
-      labels: dailyLabels,
-      datasets: [{
-        label: 'Sneakers Added per Day',
-        data: dailyCounts,
-        borderColor: 'rgba(255, 99, 132, 0.6)',
-        fill: false
-      }]
-    }
-  });
-</script>
+      new Chart(document.getElementById('dailyChart'), {
+        type: 'line',
+        data: {
+          labels: dailyLabels,
+          datasets: [{
+            label: 'Sneakers Added per Day',
+            data: dailyCounts,
+            borderColor: 'rgba(255, 99, 132, 0.6)',
+            fill: false
+          }]
+        }
+      });
+    </script>
+
+    <!-- Upload History / Sneakers cards removed because data not passed -->
+    <h3 class="mt-5 mb-3 text-center">All User Uploads</h3>
+    <div class="container">
+      <% if (uploadHistory && uploadHistory.length > 0) { %>
+        <ul class="list-group">
+          <% uploadHistory.forEach(shoe => { %>
+            <li class="list-group-item">
+              <strong><%= shoe.model %></strong> - Brand: <%= shoe.brand %>, Price: $<%= shoe.price %>, Uploaded by: <%= shoe.username %>, Date: <%= new Date(shoe.created_at).toLocaleDateString() %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p class="text-center text-muted">No sneakers uploaded yet.</p>
+      <% } %>
+    </div>
+  </div>
 </body>
 </html>

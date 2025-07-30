@@ -12,13 +12,13 @@ module.exports = function (db) {
   });
   const upload = multer({ storage });
 
-  // middleware to check if user is authenticated
+  // Middleware to check if user is authenticated
   function isAuthenticated(req, res, next) {
     if (!req.session.user) return res.redirect('/user/login');
     next();
   }
 
-    // Middleware to check if user is admin
+  // Middleware to check if user is admin
   function isAdmin(req, res, next) {
     if (!req.session.user || req.session.user.role !== 'admin') {
       return res.status(403).send('Access denied. Admin only.');
@@ -39,13 +39,22 @@ module.exports = function (db) {
     `;
 
     db.query(sql, [userId], (err, shoes) => {
-      if (err) return res.status(500).send('Database error');
+      if (err) {
+        console.error('Main listing error:', err);
+        return res.status(500).send('Database error');
+      }
 
       db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
-        if (err2) return res.status(500).send('Database error');
+        if (err2) {
+          console.error('Brand query error:', err2);
+          return res.status(500).send('Database error');
+        }
 
         db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
-          if (err3) return res.status(500).send('Database error');
+          if (err3) {
+            console.error('Size query error:', err3);
+            return res.status(500).send('Database error');
+          }
 
           res.render('index', {
             shoes,
@@ -55,116 +64,128 @@ module.exports = function (db) {
             selectedBrand: 'All',
             selectedCondition: 'All',
             selectedSize: 'All',
-            successMessages: req.flash('success'),
-            errorMessages: req.flash('error')
+            successMessages: req.flash('success') || [],
+            errorMessages: req.flash('error') || []
           });
         });
       });
     });
   });
 
-// ChatGPT prompt (Hydhir): create a get and post route for favourites in shoes.js
-// ChatGPT prompt (Hydhir): is there a way where i dont have to create the favourites table in the database
-router.get('/favourites', isAuthenticated, (req, res) => {
-  const favouriteIds = req.session.favourites || [];
+  // Favourites routes
+  router.get('/favourites', isAuthenticated, (req, res) => {
+    const favouriteIds = req.session.favourites || [];
 
-  if (favouriteIds.length === 0) {
-    return res.render('favourites', { shoes: [] });
-  }
-
-  const placeholders = favouriteIds.map(() => '?').join(',');
-
-  const sql = `
-    SELECT shoes.*, users.username
-    FROM shoes
-    JOIN users ON shoes.user_id = users.id
-    WHERE shoes.id IN (${placeholders})
-  `;
-
-  db.query(sql, favouriteIds, (err, results) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send('Error fetching favourites');
+    if (favouriteIds.length === 0) {
+      return res.render('favourites', { shoes: [] });
     }
-    res.render('favourites', { shoes: results });
+
+    const placeholders = favouriteIds.map(() => '?').join(',');
+    const sql = `
+      SELECT shoes.*, users.username
+      FROM shoes
+      JOIN users ON shoes.user_id = users.id
+      WHERE shoes.id IN (${placeholders})
+    `;
+
+    db.query(sql, favouriteIds, (err, results) => {
+      if (err) {
+        console.error('Favourites query error:', err);
+        return res.status(500).send('Error fetching favourites');
+      }
+      res.render('favourites', { shoes: results });
+    });
   });
-});
 
-router.post('/favourites/add/:id', isAuthenticated, (req, res) => {
-  const shoeId = parseInt(req.params.id);
+  router.post('/favourites/add/:id', isAuthenticated, (req, res) => {
+    const shoeId = parseInt(req.params.id);
 
-  if (!req.session.favourites) {
-    req.session.favourites = [];
-  }
-  
-  if (!req.session.favourites.includes(shoeId)) {
-    req.session.favourites.push(shoeId);
-  }
+    if (!req.session.favourites) {
+      req.session.favourites = [];
+    }
+    
+    if (!req.session.favourites.includes(shoeId)) {
+      req.session.favourites.push(shoeId);
+    }
 
-  res.redirect('/shoes/favourites');
-});
-  
-  //search functionality
-router.get('/search', (req, res) => {
-  const { query, brand, condition, size } = req.query;
+    res.redirect('/shoes/favourites');
+  });
 
-  let sql = `
-    SELECT shoes.*, users.username FROM shoes
-    JOIN users ON shoes.user_id = users.id
-    WHERE 1=1
-  `;
-  const params = [];
+  // Search functionality
+  router.get('/search', isAuthenticated, (req, res) => {
+    const { query, brand, condition, size } = req.query;
+    const userId = req.session.user.id;
 
-  if (query && query.trim() !== '') {
-    sql += ` AND (shoes.brand LIKE ? OR shoes.model LIKE ? OR shoes.description LIKE ?)`;
-    params.push(`%${query}%`, `%${query}%`, `%${query}%`);
-  }
-  if (brand && brand !== 'All') {
-    sql += ` AND shoes.brand = ?`;
-    params.push(brand);
-  }
-  if (condition && condition !== 'All') {
-    sql += ` AND shoes.condition = ?`;
-    params.push(condition);
-  }
-  if (size && size !== 'All') {
-    sql += ` AND shoes.size = ?`;
-    params.push(size);
-  }
+    let sql = `
+      SELECT shoes.*, users.username FROM shoes
+      JOIN users ON shoes.user_id = users.id
+      WHERE shoes.user_id != ?
+    `;
+    const params = [userId];
 
-  db.query(sql, params, (err, shoes) => {
-    if (err) throw err;
+    if (query && query.trim() !== '') {
+      sql += ` AND (shoes.brand LIKE ? OR shoes.model LIKE ? OR shoes.description LIKE ?)`;
+      params.push(`%${query}%`, `%${query}%`, `%${query}%`);
+    }
+    if (brand && brand !== 'All') {
+      sql += ` AND shoes.brand = ?`;
+      params.push(brand);
+    }
+    if (condition && condition !== 'All') {
+      sql += ` AND shoes.condition = ?`;
+      params.push(condition);
+    }
+    if (size && size !== 'All') {
+      sql += ` AND shoes.size = ?`;
+      params.push(size);
+    }
 
-    db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
-      if (err2) throw err2;
+    sql += ` ORDER BY shoes.created_at DESC`;
 
-      db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
-        if (err3) throw err3;
+    db.query(sql, params, (err, shoes) => {
+      if (err) {
+        console.error('Search query error:', err);
+        return res.status(500).send('Database error');
+      }
 
-        res.render('index', {
-          shoes,
-          searchTerm: query || '',
-          selectedBrand: brand || 'All',
-          selectedCondition: condition || 'All',
-          selectedSize: size || 'All',
-          brands: brandResults,
-          sizes: sizeResults.map(row => row.size)
+      db.query('SELECT DISTINCT brand FROM shoes ORDER BY brand ASC', (err2, brandResults) => {
+        if (err2) {
+          console.error('Brand query error:', err2);
+          return res.status(500).send('Database error');
+        }
+
+        db.query('SELECT DISTINCT size FROM shoes ORDER BY size ASC', (err3, sizeResults) => {
+          if (err3) {
+            console.error('Size query error:', err3);
+            return res.status(500).send('Database error');
+          }
+
+          res.render('index', {
+            shoes,
+            searchTerm: query || '',
+            selectedBrand: brand || 'All',
+            selectedCondition: condition || 'All',
+            selectedSize: size || 'All',
+            brands: brandResults,
+            sizes: sizeResults.map(row => row.size),
+            successMessages: req.flash('success') || [],
+            errorMessages: req.flash('error') || []
+          });
         });
       });
     });
   });
-});
 
   // Add sneaker form
-  router.get('/addSneakers', (req, res) => {
+  router.get('/addSneakers', isAuthenticated, (req, res) => {
     res.render('addSneakers', { 
-      errorMessages: req.flash('error'), 
-      successMessages: req.flash('success')
+      errorMessages: req.flash('error') || [], 
+      successMessages: req.flash('success') || []
     });
   });
 
   // Handle Add Sneaker
-  router.post('/addSneakers', upload.single('image_path'), (req, res) => {
+  router.post('/addSneakers', isAuthenticated, upload.single('image_path'), (req, res) => {
     const { brand, model, description, size, condition, price } = req.body;
     const userId = req.session.user.id;
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
@@ -190,43 +211,76 @@ router.get('/search', (req, res) => {
 
     db.query(sql, [userId, brand, model, description, size, condition, price, image_path], (err) => {
       if (err) {
-        console.error(err);
+        console.error('Add sneaker error:', err);
         req.flash('error', 'Database error while adding sneaker.');
         return res.redirect('/shoes/addSneakers');
       }
 
       req.flash('success', 'Sneaker added successfully!');
-      res.redirect('/shoes'); // ✅ Redirect to main listing (fresh DB query)
+      res.redirect('/shoes');
     });
   });
 
-
   // View single sneaker
-  router.get('/viewSneaker/:id', (req, res) => {
-    db.query('SELECT * FROM shoes WHERE id = ?', [req.params.id], (err, results) => {
-      if (err) return res.status(500).send('Error fetching sneaker');
+  router.get('/viewSneaker/:id', isAuthenticated, (req, res) => {
+    const sql = 'SELECT shoes.*, users.username FROM shoes JOIN users ON shoes.user_id = users.id WHERE shoes.id = ?';
+    
+    db.query(sql, [req.params.id], (err, results) => {
+      if (err) {
+        console.error('View sneaker error:', err);
+        return res.status(500).send('Error fetching sneaker');
+      }
       if (results.length === 0) return res.status(404).send('Sneaker not found');
       res.render('viewSneaker', { shoe: results[0] });
     });
   });
 
-  // Only allow authenticated users to edit or delete sneakers
+  // Edit sneaker form
   router.get('/editSneaker/:id', isAuthenticated, (req, res) => {
-  const userId = req.session.user.id;
-  const sneakerId = req.params.id;
+    const userId = req.session.user.id;
+    const userRole = req.session.user.role;
+    const sneakerId = req.params.id;
 
-  const sql = 'SELECT * FROM shoes WHERE id = ? AND user_id = ?';
-  db.query(sql, [sneakerId, userId], (err, results) => {
-    if (err) return res.status(500).send('Database error');
-    if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
-    res.render('editSneaker', { shoe: results[0] });
+    // Allow admin to edit any sneaker, regular users only their own
+    const sql = userRole === 'admin' 
+      ? 'SELECT * FROM shoes WHERE id = ?' 
+      : 'SELECT * FROM shoes WHERE id = ? AND user_id = ?';
+    const params = userRole === 'admin' ? [sneakerId] : [sneakerId, userId];
+
+    db.query(sql, params, (err, results) => {
+      if (err) {
+        console.error('Edit sneaker fetch error:', err);
+        return res.status(500).send('Database error');
+      }
+      if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
+      
+      res.render('editSneaker', { 
+        shoe: results[0],
+        errorMessages: req.flash('error') || [],
+        successMessages: req.flash('success') || []
+      });
+    });
   });
-});
 
+  // Handle edit sneaker
   router.post('/editSneaker/:id', isAuthenticated, upload.single('image_path'), (req, res) => {
     const { id } = req.params;
     const { brand, model, description, size, condition, price } = req.body;
     const user = req.session.user;
+
+    // Validation
+    if (!brand || !model || !description || !size || !condition || !price) {
+      req.flash('error', 'All fields except image are required.');
+      return res.redirect(`/shoes/editSneaker/${id}`);
+    }
+    if (isNaN(size) || size < 1 || size > 20) {
+      req.flash('error', 'Size must be between 1 and 20.');
+      return res.redirect(`/shoes/editSneaker/${id}`);
+    }
+    if (isNaN(price) || price <= 0) {
+      req.flash('error', 'Price must be a positive number.');
+      return res.redirect(`/shoes/editSneaker/${id}`);
+    }
 
     // Check ownership OR admin
     const checkSql = user.role === 'admin'
@@ -235,12 +289,14 @@ router.get('/search', (req, res) => {
     const checkParams = user.role === 'admin' ? [id] : [id, user.id];
 
     db.query(checkSql, checkParams, (err, results) => {
-      if (err) return res.status(500).send('Database error');
+      if (err) {
+        console.error('Edit sneaker check error:', err);
+        return res.status(500).send('Database error');
+      }
       if (results.length === 0) return res.status(403).send('Unauthorized or sneaker not found');
 
       // Prepare update query
-      let sql = `
-        UPDATE shoes SET brand=?, model=?, description=?, size=?, \`condition\`=?, price=?`;
+      let sql = `UPDATE shoes SET brand=?, model=?, description=?, size=?, \`condition\`=?, price=?`;
       const params = [brand, model, description, size, condition, price];
 
       if (req.file) {
@@ -257,21 +313,23 @@ router.get('/search', (req, res) => {
       }
 
       db.query(sql, params, (err2) => {
-        if (err2) return res.status(500).send('Error updating sneaker');
+        if (err2) {
+          console.error('Edit sneaker update error:', err2);
+          req.flash('error', 'Error updating sneaker');
+          return res.redirect(`/shoes/editSneaker/${id}`);
+        }
         req.flash('success', 'Sneaker updated successfully!');
         res.redirect('/shoes');
       });
     });
   });
 
-
-  //Delete sneaker (Admin OR Owner can delete)
+  // Delete sneaker (Admin OR Owner can delete)
   router.post('/deleteSneaker/:id', isAuthenticated, (req, res) => {
     const sneakerId = req.params.id;
     const user = req.session.user;
 
-    // If admin -> can delete any sneaker
-    // If normal user -> can delete only their own
+    // If admin -> can delete any sneaker, if normal user -> can delete only their own
     let sql, params;
     if (user.role === 'admin') {
       sql = 'DELETE FROM shoes WHERE id = ?';
@@ -282,7 +340,10 @@ router.get('/search', (req, res) => {
     }
 
     db.query(sql, params, (err, result) => {
-      if (err) return res.status(500).send('Database error during delete');
+      if (err) {
+        console.error('Delete sneaker error:', err);
+        return res.status(500).send('Database error during delete');
+      }
       if (result.affectedRows === 0) {
         return res.status(403).send('Unauthorized to delete this sneaker');
       }
@@ -291,17 +352,29 @@ router.get('/search', (req, res) => {
     });
   });
 
-  /*Cart Part*/
-  // Add to cart
+  // Cart functionality
   router.post('/cart/add/:id', isAuthenticated, (req, res) => {
     const shoeId = parseInt(req.params.id);
+    const userId = req.session.user.id;
 
-    // Fetch shoe details from DB
+    // Check if user is trying to add their own shoe
     db.query('SELECT * FROM shoes WHERE id = ?', [shoeId], (err, results) => {
-      if (err || results.length === 0) return res.status(500).send('Shoe not found');
+      if (err) {
+        console.error('Cart add error:', err);
+        return res.status(500).send('Database error');
+      }
+      if (results.length === 0) return res.status(404).send('Shoe not found');
+      
       const shoe = results[0];
+      
+      // Prevent users from adding their own shoes to cart
+      if (shoe.user_id === userId) {
+        req.flash('error', 'You cannot add your own shoes to cart.');
+        return res.redirect('/shoes');
+      }
 
       if (!req.session.cart) req.session.cart = [];
+      
       // Check if already in cart
       const existingItem = req.session.cart.find(i => i.id === shoeId);
       if (existingItem) {
@@ -317,12 +390,13 @@ router.get('/search', (req, res) => {
           subtotal: parseFloat(shoe.price)
         });
       }
+      
+      req.flash('success', 'Item added to cart successfully!');
       res.redirect('/shoes');
     });
   });
 
   router.get('/cart', isAuthenticated, (req, res) => {
-    // Ensure cart exists
     if (!req.session.cart) {
       req.session.cart = [];
     }
@@ -331,20 +405,21 @@ router.get('/search', (req, res) => {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
     res.render('cart', {
-      items: req.session.cart || [],
-      total: (req.session.cart || []).reduce((sum, item) => sum + item.subtotal, 0),
+      items,
+      total,
+      successMessages: req.flash('success') || [],
+      errorMessages: req.flash('error') || []
     });
   });
-
 
   router.post('/cart/delete/:id', isAuthenticated, (req, res) => {
     const shoeId = parseInt(req.params.id);
     if (req.session.cart) {
       req.session.cart = req.session.cart.filter(item => item.id !== shoeId);
     }
+    req.flash('success', 'Item removed from cart.');
     res.redirect('/shoes/cart');
   });
-
 
   return router;
 };

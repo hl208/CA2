@@ -60,12 +60,8 @@ module.exports = function(db) {
     });
   });
 
-  //User Dashboard
-  router.get('/userdashboard', (req, res) => {
-    if (!req.session.user) {
-      return res.redirect('/user/login');
-    }
-
+  //Enhanced User Dashboard with My Shoes functionality
+  router.get('/userdashboard', requireLogin, (req, res) => {
     const userId = req.session.user.id;
 
     const brandSQL = 'SELECT brand, COUNT(*) AS total FROM shoes WHERE user_id = ? GROUP BY brand';
@@ -75,7 +71,33 @@ module.exports = function(db) {
       FROM shoes 
       WHERE user_id = ? 
       ORDER BY created_at DESC
+      LIMIT 10
     `;
+
+    // Get user's favorites
+    const favouriteIds = req.session.favourites || [];
+    let favouritesQuery = '';
+    let favouritesParams = [];
+    
+    if (favouriteIds.length > 0) {
+      const placeholders = favouriteIds.map(() => '?').join(',');
+      favouritesQuery = `
+        SELECT shoes.*, users.username
+        FROM shoes
+        JOIN users ON shoes.user_id = users.id
+        WHERE shoes.id IN (${placeholders})
+        LIMIT 5
+      `;
+      favouritesParams = favouriteIds;
+    }
+
+    // Get cart items count and total value
+    const cartItems = req.session.cart || [];
+    const cartItemsCount = cartItems.length;
+    const cartTotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+    // Get total shoes count for user
+    const totalShoesSQL = 'SELECT COUNT(*) AS total FROM shoes WHERE user_id = ?';
 
     db.query(brandSQL, [userId], (err, brandResults) => {
       if (err) return res.status(500).send('Error loading brand chart data');
@@ -89,42 +111,126 @@ module.exports = function(db) {
             return res.status(500).send('Error loading upload history: ' + err3.message);
           }
 
-          res.render('userdashboard', {
-            user: req.session.user,
-            brandData: brandResults,
-            dailyData: dailyResults,
-            uploadHistory: uploadResults
+          db.query(totalShoesSQL, [userId], (err4, totalResults) => {
+            if (err4) return res.status(500).send('Error loading total shoes count');
+
+            if (favouriteIds.length === 0) {
+              // No favorites, render with empty array
+              return res.render('userdashboard', {
+                user: req.session.user,
+                brandData: brandResults,
+                dailyData: dailyResults,
+                uploadHistory: uploadResults,
+                favouriteShoes: [],
+                cartItemsCount,
+                cartTotal,
+                totalShoes: totalResults[0].total,
+                successMessages: req.flash('success') || [],
+                errorMessages: req.flash('error') || []
+              });
+            }
+
+            // Get favorites
+            db.query(favouritesQuery, favouritesParams, (err5, favouriteResults) => {
+              if (err5) {
+                console.error('Dashboard favourites error:', err5);
+                return res.status(500).send('Error loading favourites');
+              }
+
+              res.render('userdashboard', {
+                user: req.session.user,
+                brandData: brandResults,
+                dailyData: dailyResults,
+                uploadHistory: uploadResults,
+                favouriteShoes: favouriteResults,
+                cartItemsCount,
+                cartTotal,
+                totalShoes: totalResults[0].total,
+                successMessages: req.flash('success') || [],
+                errorMessages: req.flash('error') || []
+              });
+            });
           });
         });
       });
     });
   });
 
-  //Admin panel
-  router.get('/admin', (req, res) => {
-    if (!req.session.user || req.session.user.role !== 'admin') {
-      return res.status(403).send('Access denied');
-    }
+  // My Shoes - dedicated page for user's shoes with full management
+  router.get('/my-shoes', requireLogin, (req, res) => {
+    const userId = req.session.user.id;
 
-    const brandSQL = 'SELECT brand, COUNT(*) AS total FROM shoes GROUP BY brand';
-    const dailySQL = 'SELECT DATE(created_at) AS date, COUNT(*) AS total FROM shoes GROUP BY DATE(created_at)';
+    const sql = `
+      SELECT shoes.*, users.username 
+      FROM shoes
+      JOIN users ON shoes.user_id = users.id
+      WHERE shoes.user_id = ?
+      ORDER BY shoes.created_at DESC
+    `;
 
-    db.query(brandSQL, (err, brandResults) => {
-      if (err) return res.status(500).send('Error loading chart data');
+    db.query(sql, [userId], (err, shoes) => {
+      if (err) {
+        console.error('My shoes error:', err);
+        return res.status(500).send('Database error');
+      }
 
-      db.query(dailySQL, (err2, dailyResults) => {
-        if (err2) return res.status(500).send('Error loading chart data');
-
-        res.render('admin', {
-          user: req.session.user,
-          brandData: brandResults,
-          dailyData: dailyResults
-        });
+      res.render('my-shoes', {
+        shoes,
+        user: req.session.user,
+        successMessages: req.flash('success') || [],
+        errorMessages: req.flash('error') || []
       });
     });
   });
 
-  // ✅ Fixed helper functions
+  // Logout route
+  router.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destroy error:', err);
+        return res.status(500).send('Error logging out');
+      }
+      res.redirect('/user/login');
+    });
+  });
+
+  //Admin panel
+  router.get('/admin', (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'admin') {
+    return res.status(403).send('Access denied');
+  }
+
+  const brandSQL = 'SELECT brand, COUNT(*) AS total FROM shoes GROUP BY brand';
+  const dailySQL = 'SELECT DATE(created_at) AS date, COUNT(*) AS total FROM shoes GROUP BY DATE(created_at)';
+  const uploadsSQL = `
+    SELECT shoes.*, users.username 
+    FROM shoes 
+    JOIN users ON shoes.user_id = users.id
+    ORDER BY shoes.created_at DESC
+  `;
+
+  db.query(brandSQL, (err, brandResults) => {
+    if (err) return res.status(500).send('Error loading chart data');
+
+    db.query(dailySQL, (err2, dailyResults) => {
+      if (err2) return res.status(500).send('Error loading chart data');
+
+      db.query(uploadsSQL, (err3, uploadsResults) => {
+        if (err3) return res.status(500).send('Error loading uploads data');
+
+        res.render('admin', {
+          user: req.session.user,
+          brandData: brandResults,
+          dailyData: dailyResults,
+          uploadHistory: uploadsResults
+        });
+      });
+    });
+  });
+});
+
+
+  // Helper functions
   function errorHandler(req, res, msg, redirect) {
     console.error(msg);
     req.flash('error', msg);
