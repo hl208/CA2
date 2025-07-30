@@ -77,7 +77,7 @@
     <!-- Description -->
     <div class="mb-3">
       <label for="description" class="form-label">Description:</label>
-      <textarea class="form-control" id="description" name="description" rows="3" required placeholder="Describe the sneaker..."></textarea>
+      <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe the sneaker..."></textarea>
     </div>
 
     <!-- Size -->
@@ -107,7 +107,7 @@
     <!-- Created At -->
     <div class="mb-3">
       <label for="created_at" class="form-label">Created At:</label>
-      <input type="date" class="form-control" id="created_at" name="created_at" required />
+      <input type="date" class="form-control" id="created_at" name="created_at"  />
     </div>
 
     <!-- Image Upload -->
@@ -223,75 +223,6 @@
     form.submit();
   });
 
-  //form validation
-  form.addEventListener('submit', function (e) {
-    const brand = document.getElementById('brand').value.trim();
-    const model = document.getElementById('model').value.trim();
-    const description = document.getElementById('description').value.trim();
-    const size = parseFloat(document.getElementById('size').value);
-    const condition = document.getElementById('condition').value;
-    const price = parseFloat(document.getElementById('price').value);
-    const date = document.getElementById('created_at').value;
-    const image = document.getElementById('image_path').files[0];
-
-    let isValid = true;
-    let errorMsg = '';
-
-    if (brand.length < 2) {
-      errorMsg += 'Brand must be at least 2 characters long.\n';
-      isValid = false;
-    }
-
-    if (model.length < 2) {
-      errorMsg += 'Model must be at least 2 characters long.\n';
-      isValid = false;
-    }
-
-    if (description.length < 10) {
-      errorMsg += 'Description must be at least 10 characters.\n';
-      isValid = false;
-    }
-
-    if (isNaN(size) || size < 1 || size > 20) {
-      errorMsg += 'Size must be between 1 and 20.\n';
-      isValid = false;
-    }
-
-    if (!condition) {
-      errorMsg += 'Please select a condition.\n';
-      isValid = false;
-    }
-
-    if (isNaN(price) || price < 0) {
-      errorMsg += 'Price must be a positive number.\n';
-      isValid = false;
-    }
-
-    if (!date) {
-      errorMsg += 'Please select a creation date.\n';
-      isValid = false;
-    }
-
-    if (image) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      const maxSize = 2 * 1024 * 1024;
-
-      if (!allowedTypes.includes(image.type)) {
-        errorMsg += 'Image must be a JPG, PNG, GIF, or WEBP file.\n';
-        isValid = false;
-      }
-
-      if (image.size > maxSize) {
-        errorMsg += 'Image must be less than 2MB.\n';
-        isValid = false;
-      }
-    }
-
-    if (!isValid) {
-      e.preventDefault();
-      alert(errorMsg);
-    }
-  });
 </script>
 </script>
 </script>
