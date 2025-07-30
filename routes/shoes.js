@@ -163,7 +163,24 @@ router.get('/search', (req, res) => {
     const userId = req.session.user.id; 
     const image_path = req.file ? `/uploads/${req.file.filename}` : null;
 
-     const sql = `
+    // Server-side validation
+    if (!brand || !model || !description || !size || !condition || !price) {
+      return res.status(400).send('All fields except image are required.');
+    }
+
+    if (condition.trim() === '') {
+      return res.status(400).send('Condition must be selected.');
+    }
+
+    if (isNaN(size) || size < 1 || size > 20) {
+      return res.status(400).send('Size must be between 1 and 20.');
+    }
+
+    if (isNaN(price) || price <= 0) {
+      return res.status(400).send('Price must be a positive number.');
+    } 
+
+    const sql = `
       INSERT INTO shoes (user_id, brand, model, description, size, \`condition\`, price, created_at, image_path)
       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)
     `;
