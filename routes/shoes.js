@@ -62,6 +62,46 @@ module.exports = function (db) {
   });
 });
 
+// ChatGPT prompt (Hydhir): create a get and post route for favourites in shoes.js
+// ChatGPT prompt (Hydhir): is there a way where i dont have to create the favourites table in the database
+router.get('/favourites', isAuthenticated, (req, res) => {
+  const favouriteIds = req.session.favourites || [];
+
+  if (favouriteIds.length === 0) {
+    return res.render('favourites', { shoes: [] });
+  }
+
+  const placeholders = favouriteIds.map(() => '?').join(',');
+
+  const sql = `
+    SELECT shoes.*, users.username
+    FROM shoes
+    JOIN users ON shoes.user_id = users.id
+    WHERE shoes.id IN (${placeholders})
+  `;
+
+  db.query(sql, favouriteIds, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Error fetching favourites');
+    }
+    res.render('favourites', { shoes: results });
+  });
+});
+
+router.post('/favourites/add/:id', isAuthenticated, (req, res) => {
+  const shoeId = parseInt(req.params.id);
+
+  if (!req.session.favourites) {
+    req.session.favourites = [];
+  }
+  
+  if (!req.session.favourites.includes(shoeId)) {
+    req.session.favourites.push(shoeId);
+  }
+
+  res.redirect('/shoes/favourites');
+});
   
   //search functionality
 router.get('/search', (req, res) => {

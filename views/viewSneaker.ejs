@@ -39,7 +39,7 @@
       </div>
     </div>
   </nav>
-    
+<!-- ChatGPT prompt (Hydhir): i want the line to be black colour, also make the border more curvys-->
     <div class="container my-5">
         <br>
         <div class="text-center mb-4"><h2 class="fw-bold text-uppercase text-primary">Sneakers info</h2></div>
@@ -63,6 +63,13 @@
         <div class="mt-4">
         <a href ="/shoes/" class="btn btn-dark btn-lg px-4">Back</a>
         </div>
+
+    <!-- ChatGPT: i want to add a favourite icon-->
+        <form action="/shoes/favourites/add/<%= shoe.id %>" method="POST">
+          <button type="submit" class="btn btn-danger btn-lg px-4">
+          <i class="bi bi-heart"></i> Favourite
+          </button>
+        </form>
     </div>
     
 </body>

@@ -1,0 +1,5 @@
+DB_HOST=c237-all.mysql.database.azure.com
+DB_USER=c237admin
+DB_PASS=c2372025!
+DB_NAME=c237_24017721_shoedb
+DB_PORT=3306
